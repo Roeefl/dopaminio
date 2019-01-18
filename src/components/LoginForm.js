@@ -1,79 +1,19 @@
 import React from 'react';
-import Firebase from 'firebase';
+import { connect } from 'react-redux';
 import { Text } from 'react-native';
 import { Button, Card, CardSection, Input, Spinner } from './common';
-import { connect } from 'react-redux';
 import * as actions from '../actions';
 
 class LoginForm extends React.Component {
-    state = {
-        email: '',
-        password: '',
-        error: '',
-        loading: false
-    };
-
-    onLoginSuccess = () => {
-        this.setState(
-            {
-                email: '',
-                password: '',
-                error: '',
-                loading: false
-            }
-        );
-    }
-
-    onLoginFail = (error) => {
-        this.setState(
-            {
-                error,
-                loading: false
-            }
-        );
-    }
-
     onLogin = async () => {
-        this.setState(
-            {
-                error: '',
-                loading: true
-            }
-        );
-
         console.log('onLogin');
-
-        const { email, password } = this.state;
-
-        try {
-            const credential = await Firebase.auth().signInWithEmailAndPassword(email, password);
-            
-            if (credential) {
-                console.log('default app user ->', credential.user.toJSON());
-                this.onLoginSuccess();
-            }
-        } catch (error) {
-            this.onLoginFail(error);
-
-            // try {
-            //     const reg = await Firebase.auth().createUserWithEmailAndPassword(email, password);
-
-            //     if (reg) {
-            //         console.log('default app user ->', reg.user.toJSON());
-            //         this.onLoginSuccess();
-            //     }
-            // }
-            // catch (err) {
-            //     console.log(err);
-            //     this.onLoginFail();
-            // }
-        }
+        this.props.loginUser(this.props.email, this.props.password);
     }
 
     renderButton() {
-        if (this.state.loading) {
+        if (this.props.loading) {
             return (
-                <Spinner size='small' />
+                <Spinner size='large' />
             );
         }
 
@@ -85,6 +25,18 @@ class LoginForm extends React.Component {
         );
     }
 
+    renderError() {
+        if (this.props.error) {
+            return (
+                <CardSection>
+                    <Text style={styles.error}>
+                        {this.props.error}
+                    </Text>
+                </CardSection>
+            );
+        }
+    }
+
     render() {
         return (
             <Card>
@@ -92,7 +44,7 @@ class LoginForm extends React.Component {
                     <Input
                         label='Email'
                         placeholder='your-email@gmail.com'
-                        value={this.state.email}
+                        value={this.props.email}
                         onChangeText={email => this.props.loginEmailChanged(email)}
                     />
                 </CardSection>
@@ -102,16 +54,12 @@ class LoginForm extends React.Component {
                         label='Password'
                         placeholder='1337savage'
                         secureTextEntry
-                        value={this.state.password}
-                        onChangeText={password => this.pass.loginPasswordChanged(password)}
+                        value={this.props.password}
+                        onChangeText={password => this.props.loginPasswordChanged(password)}
                     />
                 </CardSection>
 
-                <CardSection>
-                    <Text style={styles.error}>
-                        {this.state.error}
-                    </Text>
-                </CardSection>
+                {this.renderError()}
 
                 <CardSection>
                     {this.renderButton()}
@@ -129,4 +77,20 @@ const styles = {
     }
 };
 
-export default connect(null, actions)(LoginForm);
+const mapStateToProps = (state) => {
+    // console.log(state.auth);
+
+    return (
+        {
+            email: state.auth.email,
+            password: state.auth.password,
+            error: state.auth.error,
+            loading: state.auth.loading
+        }
+    );
+};
+
+export default connect(
+    mapStateToProps,
+    actions
+)(LoginForm);
